@@ -1,0 +1,8 @@
+{
+  "name": "EcoPulse",
+  "description": "An AI-powered environmental education platform that provides personalized sustainability tips, eco-missions, and local green resources using Gemini API.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
