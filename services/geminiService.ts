@@ -81,14 +81,18 @@ export const getEcoNews = async (isKidMode: boolean = false) => {
   };
 };
 
-export const searchOrganizations = async (query: string, location?: { lat: number; lng: number }) => {
+export const searchOrganizations = async (query: string, location?: { lat: number; lng: number }, isKidMode: boolean = false) => {
   const ai = getAI();
   const model = 'gemini-3-flash-preview';
 
-  const prompt = `Find reputable environmental organizations or charities related to "${query}" ${location ? 'near this location' : 'globally'}. For each, provide a short 2-sentence description of their mission. Focus on organizations that are currently active and well-regarded.`;
+  const prompt = isKidMode
+    ? `Find 3 amazing groups that help animals or trees related to "${query}". Describe them in 1 very simple sentence each using words a 6-year-old would know. Make it sound like they are superheroes for nature!`
+    : `Find reputable environmental organizations or charities related to "${query}" ${location ? 'near this location' : 'globally'}. For each, provide a short 2-sentence description of their mission. Focus on organizations that are currently active and well-regarded.`;
 
   const config: any = {
-    systemInstruction: "You are a green directory assistant. Your job is to help people find credible environmental organizations. Always include URLs for the organizations you find. Use Google Search to ensure the data is current.",
+    systemInstruction: isKidMode 
+      ? "You are Leafy, helping a child find nature heroes. Use lots of emojis and very simple, happy words. Only find groups that are safe and positive for children to learn about. Always include URLs."
+      : "You are a green directory assistant. Your job is to help people find credible environmental organizations. Always include URLs for the organizations you find. Use Google Search to ensure the data is current.",
     tools: [{ googleSearch: {} }]
   };
 

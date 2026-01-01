@@ -4,10 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ImpactData, EcoLevel } from '../types';
 
 const data: ImpactData[] = [
-  { name: 'Water', savings: 450, target: 1000 },
-  { name: 'Air', savings: 12, target: 50 },
-  { name: 'Trash', savings: 800, target: 2000 },
-  { name: 'Sun', savings: 35, target: 100 },
+  { name: 'Water', savings: 0, target: 1000 },
+  { name: 'Air', savings: 0, target: 50 },
+  { name: 'Trash', savings: 0, target: 2000 },
+  { name: 'Sun', savings: 0, target: 100 },
 ];
 
 interface DashboardProps {
@@ -87,7 +87,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
                🌻 🌳 🌸 🦋 🍄
              </div>
              <div className="mt-8 w-full bg-sky-50 h-6 rounded-full overflow-hidden border-2 border-sky-100">
-                <div className="h-full bg-sky-400 w-[70%]" style={{width: `${Math.min(100, (ecoCoins / 1000) * 100)}%`}}></div>
+                <div className="h-full bg-sky-400 w-0 transition-all duration-1000" style={{width: `${Math.min(100, (ecoCoins / 1000) * 100)}%`}}></div>
              </div>
           </div>
         </div>

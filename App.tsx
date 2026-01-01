@@ -37,15 +37,15 @@ const App: React.FC = () => {
     return (saved === 'kid' || saved === 'pro') ? saved : 'pro';
   });
 
-  // Separate Coin States
+  // Separate Coin States - Started at 0 for "lowest point"
   const [proCoins, setProCoins] = useState<number>(() => {
     const saved = localStorage.getItem('ecopulse_coins_pro');
-    return saved ? parseInt(saved, 10) : 150;
+    return saved ? parseInt(saved, 10) : 0;
   });
   
   const [kidCoins, setKidCoins] = useState<number>(() => {
     const saved = localStorage.getItem('ecopulse_coins_kid');
-    return saved ? parseInt(saved, 10) : 150;
+    return saved ? parseInt(saved, 10) : 0;
   });
   
   // Separate Rank States
