@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { EcoLevel } from '../types';
+import { EcoLevel, UserProfile } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,9 +10,13 @@ interface LayoutProps {
   currentLevel: EcoLevel;
   mode: 'pro' | 'kid';
   setMode: (mode: 'pro' | 'kid') => void;
+  userProfile?: UserProfile | null;
+  onOpenProfile: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, ecoCoins, currentLevel, mode, setMode }) => {
+const Layout: React.FC<LayoutProps> = ({ 
+  children, activeTab, setActiveTab, ecoCoins, currentLevel, mode, setMode, userProfile, onOpenProfile 
+}) => {
   const isKid = mode === 'kid';
   
   const tabs = [
@@ -26,7 +30,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, ecoC
     { id: 'learning', label: isKid ? 'Smart Hub' : 'Knowledge Hub', icon: isKid ? '🎓' : '📚' }
   ];
 
-  const bgColor = isKid ? 'bg-sky-400' : 'bg-emerald-900';
   const sidebarColor = isKid ? 'bg-white' : 'bg-emerald-900';
   const textColor = isKid ? 'text-sky-900' : 'text-white';
 
@@ -96,20 +99,49 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, ecoC
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Mobile Nav */}
-        <header className={`md:hidden ${isKid ? 'bg-sky-400' : 'bg-emerald-900'} text-white p-4 flex items-center justify-between sticky top-0 z-10 shadow-md`}>
-          <h1 className="text-xl font-black flex items-center gap-2">
+        {/* Header */}
+        <header className={`px-4 py-4 md:px-8 flex items-center justify-between sticky top-0 z-10 transition-colors duration-300 ${isKid ? 'bg-sky-400 text-white shadow-md' : 'bg-emerald-900 text-white md:bg-stone-50 md:text-stone-900 md:border-b md:border-stone-200'}`}>
+          <h1 className="md:hidden text-xl font-black flex items-center gap-2">
             <span>{isKid ? '🎈' : '🌱'}</span> {isKid ? 'EcoPals' : 'EcoPulse'}
           </h1>
-          <button 
-            onClick={() => setMode(isKid ? 'pro' : 'kid')}
-            className="text-xs bg-white/20 px-3 py-1 rounded-full font-bold"
-          >
-            {isKid ? '💼 Pro' : '🌈 Kid'}
-          </button>
+          <div className="hidden md:block"></div>
+          
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setMode(isKid ? 'pro' : 'kid')}
+              className="md:hidden text-xs bg-white/20 px-3 py-1 rounded-full font-bold backdrop-blur-sm"
+            >
+              {isKid ? '💼 Pro' : '🌈 Kid'}
+            </button>
+            
+            {userProfile && (
+              <button 
+                onClick={onOpenProfile}
+                title="Edit My Profile"
+                className={`flex items-center gap-3 p-1.5 pr-4 rounded-full transition-all hover:ring-4 group active:scale-95 ${
+                  isKid 
+                    ? 'bg-white text-sky-900 shadow-lg ring-sky-200 hover:ring-sky-300' 
+                    : 'bg-emerald-600 text-white md:bg-white md:text-stone-800 md:border md:border-stone-200 ring-emerald-500/20 hover:ring-emerald-500/40'
+                }`}
+              >
+                <div className={`w-10 h-10 flex items-center justify-center text-2xl rounded-full shadow-inner ${isKid ? 'bg-sky-50' : 'bg-emerald-700 md:bg-stone-100'}`}>
+                  {userProfile.avatarIcon || '👤'}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className={`text-[9px] font-black uppercase leading-none mb-0.5 tracking-tighter ${isKid ? 'text-sky-400' : 'text-stone-400'}`}>
+                    {userProfile.pronouns}
+                  </p>
+                  <p className="text-xs font-black leading-none group-hover:underline">
+                    {userProfile.name}
+                  </p>
+                </div>
+                <span className={`text-[10px] ml-1 opacity-40 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all`}>✏️</span>
+              </button>
+            )}
+          </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {children}
         </div>
       </main>

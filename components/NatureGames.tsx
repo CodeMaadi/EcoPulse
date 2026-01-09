@@ -1,316 +1,177 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 
 interface GameProps {
   onEarnCoins: (amount: number) => void;
   isKidMode?: boolean;
+  currentRank: number;
 }
 
-// --- KID MODE DATA ---
 const ITEMS_TO_SORT_KID = [
   { id: 1, name: 'Apple Core', icon: '🍎', bin: 'compost' },
   { id: 2, name: 'Soda Can', icon: '🥤', bin: 'recycle' },
+  { id: 3, name: 'Paper Box', icon: '📦', bin: 'recycle' },
   { id: 4, name: 'Banana Peel', icon: '🍌', bin: 'compost' },
   { id: 5, name: 'Plastic Bottle', icon: '🧴', bin: 'recycle' },
-  { id: 7, name: 'Candy Wrapper', icon: '🍬', bin: 'trash' },
+  { id: 6, name: 'Used Napkin', icon: '🧻', bin: 'trash' },
 ];
 
-// --- PRO MODE DATA ---
-const ADVANCED_WASTE = [
-  { id: 1, name: 'Lithium-Ion Battery', icon: '🔋', bin: 'hazardous', info: 'Contains cobalt and lithium; requires specialized thermal processing.' },
-  { id: 2, name: 'Corrugated Cardboard (Greasy)', icon: '📦', bin: 'landfill', info: 'Food contamination weakens fiber bonds, making it unrecyclable.' },
-  { id: 3, name: 'PVC Pipe Fragment', icon: '🚰', bin: 'specialized', info: 'Polyvinyl Chloride releases toxins if melted with standard PET/HDPE.' },
-  { id: 4, name: 'Spent LED Bulb', icon: '💡', bin: 'e-waste', info: 'Contains trace heavy metals and electronic circuitry.' },
-  { id: 5, name: 'Grass Clippings', icon: '🌱', bin: 'compost', info: 'High-nitrogen organic matter perfect for industrial composting.' },
-];
-
-const NatureGames: React.FC<GameProps> = ({ onEarnCoins, isKidMode }) => {
-  const [activeGame, setActiveGame] = useState<'hub' | 'sort' | 'grow' | 'grid'>('hub');
-  const [gameFeedback, setGameFeedback] = useState<string | null>(null);
-
-  // Sorting Logic (Shared but distinct sets)
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+const NatureGames: React.FC<GameProps> = ({ onEarnCoins, isKidMode, currentRank }) => {
+  const [activeGame, setActiveGame] = useState<'hub' | 'sort' | 'grow' | 'grid' | 'tap'>('hub');
   const [score, setScore] = useState(0);
-
-  // Kid Grow Logic
+  const [gameFeedback, setGameFeedback] = useState<string | null>(null);
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [growth, setGrowth] = useState(0);
 
-  // Pro Grid Logic
-  const [solar, setSolar] = useState(30);
-  const [wind, setWind] = useState(20);
-  const [gas, setGas] = useState(50);
-  const [budget, setBudget] = useState(5000);
-  const totalPower = solar + wind + gas;
-  const carbonImpact = (gas * 5) + (solar * 0.1) + (wind * 0.2);
+  const [tapItems, setTapItems] = useState<{ id: number; icon: string; x: number; y: number; type: 'good' | 'bad' }[]>([]);
+  const [gameTime, setGameTime] = useState(30);
+  const [isGameRunning, setIsGameRunning] = useState(false);
+
+  const startTapGame = () => {
+    setScore(0);
+    setGameTime(30);
+    setTapItems([]);
+    setIsGameRunning(true);
+    setActiveGame('tap');
+  };
+
+  useEffect(() => {
+    if (isGameRunning && gameTime > 0) {
+      const timer = setInterval(() => setGameTime(prev => prev - 1), 1000);
+      const generator = setInterval(() => {
+        const id = Math.random();
+        const type = Math.random() > 0.3 ? 'good' : 'bad';
+        const icons = type === 'good' ? ['🌱', '☀️', '♻️', '💧'] : ['💨', '🛢️', '🏭', '🚗'];
+        const newItem = { id, icon: icons[Math.floor(Math.random() * icons.length)], x: Math.random() * 80 + 10, y: Math.random() * 80 + 10, type };
+        setTapItems(prev => [...prev, newItem]);
+        setTimeout(() => setTapItems(prev => prev.filter(item => item.id !== id)), 1500);
+      }, 800);
+      return () => { clearInterval(timer); clearInterval(generator); };
+    } else if (gameTime === 0 && isGameRunning) {
+      setIsGameRunning(false);
+      onEarnCoins(score * 2);
+      setGameFeedback(`Game Over! You earned ${score * 2} points!`);
+    }
+  }, [isGameRunning, gameTime]);
 
   const handleSort = (bin: string) => {
-    const dataSet = isKidMode ? ITEMS_TO_SORT_KID : ADVANCED_WASTE;
-    const item = dataSet[currentItemIndex];
-    
+    const item = ITEMS_TO_SORT_KID[currentItemIndex];
     if (item.bin === bin) {
       setScore(s => s + 1);
-      setGameFeedback(isKidMode ? "CORRECT! 🎉" : "CRITICAL ANALYSIS CORRECT. +15 Eco-Coins.");
-      onEarnCoins(isKidMode ? 5 : 15);
+      onEarnCoins(5);
+      setGameFeedback("Correct! 🎉");
     } else {
-      setGameFeedback(isKidMode 
-        ? `OOPS! That goes in the ${item.bin}! 🧐` 
-        : `INCORRECT. Resource mismanaged. Item belongs in ${item.bin.toUpperCase()}.`
-      );
+      setGameFeedback("Oops! Try again! 🧐");
     }
-
     setTimeout(() => {
       setGameFeedback(null);
-      setCurrentItemIndex(Math.floor(Math.random() * dataSet.length));
-    }, 2000);
+      setCurrentItemIndex(prev => (prev + 1) % ITEMS_TO_SORT_KID.length);
+    }, 1000);
   };
-
-  const handleGridSimulation = () => {
-    if (totalPower !== 100) {
-      setGameFeedback("ERROR: Grid Demand not met. Supply must exactly equal 100MW.");
-    } else if (carbonImpact > 250) {
-      setGameFeedback("SIMULATION FAILED: Carbon threshold exceeded. City fined.");
-      setBudget(prev => prev - 500);
-    } else {
-      setGameFeedback("SIMULATION SUCCESS: Grid Stabilized. Efficiency Bonus!");
-      onEarnCoins(50);
-      setBudget(prev => prev + 200);
-    }
-    setTimeout(() => setGameFeedback(null), 3000);
-  };
-
-  // --- RENDERING LOGIC ---
 
   if (activeGame === 'hub') {
+    const gamesList = [
+      { id: 'sort', rank: 1, icon: '🤖', title: "Sort-o-Matic", desc: "Sort the trash correctly!" },
+      { id: 'grow', rank: 6, icon: '🌳', title: "Nature Grower", desc: "Grow a massive forest!" },
+      { id: 'tap', rank: 11, icon: '⚡', title: "Eco-Tap Blitz", desc: "Fast-paced reaction challenge!" }
+    ];
+
     return (
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="text-center max-w-2xl mx-auto space-y-4">
-          <h2 className={`text-4xl md:text-5xl font-black ${isKidMode ? 'text-sky-900' : 'text-stone-800'}`}>
-            {isKidMode ? 'Nature Games! 🎮' : 'Sustainability Simulators'}
-          </h2>
-          <p className={`${isKidMode ? 'text-sky-600 font-bold italic' : 'text-stone-500'}`}>
-            {isKidMode 
-              ? 'Play and learn! Earn sparkly Earth Stars for every win! 🌟' 
-              : 'Test your strategic management skills with real-world environmental scenarios.'}
-          </p>
+      <div className="space-y-8 p-4">
+        <div className="text-center">
+          <h2 className="text-4xl font-black text-sky-900 mb-2">Nature Games</h2>
+          <p className="text-sky-600 font-bold">You are Rank {currentRank}! Keep climbing to unlock more!</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Game 1: Sorting */}
-          <button 
-            onClick={() => { setActiveGame('sort'); setScore(0); }}
-            className={`group relative p-8 rounded-[3rem] border-4 transition-all text-left overflow-hidden bg-white ${
-              isKidMode ? 'border-sky-100 hover:border-sky-400' : 'border-stone-100 hover:border-emerald-500'
-            }`}
-          >
-            <div className="relative z-10">
-              <span className="text-4xl mb-4 block">{isKidMode ? '🤖' : '🔬'}</span>
-              <h3 className={`text-2xl font-black mb-2 ${isKidMode ? 'text-sky-900' : 'text-stone-800'}`}>
-                {isKidMode ? "Leafy's Sort-o-Matic" : "Circular Economy Audit"}
-              </h3>
-              <p className={`text-sm mb-6 ${isKidMode ? 'text-sky-600' : 'text-stone-500'}`}>
-                {isKidMode 
-                  ? "Help Leafy put trash where it belongs! Beep-boop!" 
-                  : "Categorize complex industrial waste based on chemical composition and local regulations."}
-              </p>
-              <div className={`inline-block px-6 py-3 rounded-2xl font-black text-sm text-white ${isKidMode ? 'bg-sky-500' : 'bg-emerald-600'}`}>
-                LAUNCH SIM 🚀
-              </div>
-            </div>
-            <span className="absolute -bottom-10 -right-10 text-[10rem] opacity-5 rotate-12">{isKidMode ? '♻️' : '⚖️'}</span>
-          </button>
-
-          {/* Game 2: Strategy/Grow */}
-          <button 
-            onClick={() => setActiveGame(isKidMode ? 'grow' : 'grid')}
-            className={`group relative p-8 rounded-[3rem] border-4 transition-all text-left overflow-hidden bg-white ${
-              isKidMode ? 'border-emerald-100 hover:border-emerald-400' : 'border-stone-100 hover:border-blue-500'
-            }`}
-          >
-            <div className="relative z-10">
-              <span className="text-4xl mb-4 block">{isKidMode ? '✨' : '🏙️'}</span>
-              <h3 className={`text-2xl font-black mb-2 ${isKidMode ? 'text-emerald-900' : 'text-stone-800'}`}>
-                {isKidMode ? "Magic Forest Grower" : "Grid Architect v1.0"}
-              </h3>
-              <p className={`text-sm mb-6 ${isKidMode ? 'text-emerald-600' : 'text-stone-500'}`}>
-                {isKidMode 
-                  ? "Plant a seed and water it to grow a giant tree! It's magic!" 
-                  : "Balance energy supply vs demand while minimizing carbon footprint and managing city funds."}
-              </p>
-              <div className={`inline-block px-6 py-3 rounded-2xl font-black text-sm text-white ${isKidMode ? 'bg-emerald-500' : 'bg-blue-600'}`}>
-                LAUNCH SIM ⚡
-              </div>
-            </div>
-            <span className="absolute -bottom-10 -right-10 text-[10rem] opacity-5 rotate-12">{isKidMode ? '🌳' : '📈'}</span>
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {gamesList.map(game => {
+            const unlocked = currentRank >= game.rank;
+            return (
+              <button 
+                key={game.id}
+                onClick={() => unlocked && (game.id === 'tap' ? startTapGame() : setActiveGame(game.id as any))}
+                className={`p-8 rounded-[3rem] border-4 bg-white transition-all text-left relative overflow-hidden ${unlocked ? 'border-sky-200 hover:border-sky-500 hover:scale-105' : 'opacity-60 grayscale'}`}
+              >
+                {!unlocked && (
+                  <div className="absolute inset-0 bg-stone-900/5 backdrop-blur-[2px] flex items-center justify-center">
+                    <span className="bg-white px-4 py-2 rounded-full font-black text-xs uppercase shadow-xl">Unlocks at Rank {game.rank}</span>
+                  </div>
+                )}
+                <span className="text-5xl block mb-4">{game.icon}</span>
+                <h3 className="text-2xl font-black text-sky-900">{game.title}</h3>
+                <p className="text-sky-600 text-sm">{game.desc}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  // --- PRO MODE: GRID ARCHITECT ---
-  if (activeGame === 'grid' && !isKidMode) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in zoom-in-95 duration-500">
-        <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-stone-200 relative overflow-hidden">
-          <button onClick={() => setActiveGame('hub')} className="absolute top-8 left-8 text-stone-400 hover:text-stone-800">← Back to Hub</button>
-          
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-stone-800">Grid Architect Simulation</h2>
-            <p className="text-stone-500">Target: Stabilize power at 100MW | Carbon Limit: 250 Units</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-stone-50 p-6 rounded-3xl border border-stone-100 text-center">
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Status</p>
-              <p className={`text-2xl font-black ${totalPower === 100 ? 'text-emerald-600' : 'text-amber-500'}`}>{totalPower} / 100 MW</p>
-            </div>
-            <div className="bg-stone-50 p-6 rounded-3xl border border-stone-100 text-center">
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Carbon Impact</p>
-              <p className={`text-2xl font-black ${carbonImpact <= 250 ? 'text-emerald-600' : 'text-red-500'}`}>{carbonImpact.toFixed(1)} units</p>
-            </div>
-            <div className="bg-stone-50 p-6 rounded-3xl border border-stone-100 text-center">
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">City Funds</p>
-              <p className="text-2xl font-black text-amber-600">${budget}</p>
-            </div>
-          </div>
-
-          <div className="space-y-8 mb-12">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="font-bold flex items-center gap-2">☀️ Solar Power <span className="text-xs text-stone-400">(Low Carbon, High Cost)</span></span>
-                <span className="font-black">{solar}MW</span>
-              </div>
-              <input type="range" value={solar} onChange={(e) => setSolar(Number(e.target.value))} className="w-full h-3 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-yellow-400" />
-            </div>
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="font-bold flex items-center gap-2">💨 Wind Energy <span className="text-xs text-stone-400">(Zero Carbon, Medium Cost)</span></span>
-                <span className="font-black">{wind}MW</span>
-              </div>
-              <input type="range" value={wind} onChange={(e) => setWind(Number(e.target.value))} className="w-full h-3 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-sky-400" />
-            </div>
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="font-bold flex items-center gap-2">🔥 Natural Gas <span className="text-xs text-stone-400">(High Carbon, Low Cost)</span></span>
-                <span className="font-black">{gas}MW</span>
-              </div>
-              <input type="range" value={gas} onChange={(e) => setGas(Number(e.target.value))} className="w-full h-3 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-stone-700" />
-            </div>
-          </div>
-
-          {gameFeedback && (
-            <div className={`p-4 rounded-2xl mb-8 text-center font-bold animate-in fade-in slide-in-from-top-2 ${gameFeedback.includes('SUCCESS') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-              {gameFeedback}
-            </div>
-          )}
-
-          <button 
-            onClick={handleGridSimulation}
-            className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black transition-all shadow-lg active:scale-95"
-          >
-            RUN GRID STABILITY TEST
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- SORTING GAMES (Kid & Pro variants) ---
   if (activeGame === 'sort') {
-    const dataSet = isKidMode ? ITEMS_TO_SORT_KID : ADVANCED_WASTE;
-    const currentItem = dataSet[currentItemIndex];
-
+    const item = ITEMS_TO_SORT_KID[currentItemIndex];
     return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in zoom-in-95 duration-500">
-        <div className={`bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border-4 relative ${isKidMode ? 'border-sky-100' : 'border-stone-100'}`}>
-          <button onClick={() => setActiveGame('hub')} className="absolute top-8 left-8 text-stone-400">← Back</button>
-          
-          <div className="text-center mb-10">
-            <h2 className={`text-3xl font-black ${isKidMode ? 'text-sky-900' : 'text-stone-800'}`}>
-              {isKidMode ? "Leafy's Sort-o-Matic" : "Advanced Resource Audit"}
-            </h2>
-            <p className="font-bold opacity-60">Score: {score} {isKidMode ? 'Stars 🌟' : 'Points'}</p>
-          </div>
-
-          <div className={`h-64 flex flex-col items-center justify-center rounded-[2.5rem] mb-10 relative overflow-hidden shadow-inner ${isKidMode ? 'bg-sky-50' : 'bg-stone-50'}`}>
-             {gameFeedback ? (
-               <div className={`text-xl font-black text-center px-6 ${gameFeedback.includes('CORRECT') ? 'text-emerald-600' : 'text-amber-600'}`}>
-                 {gameFeedback}
-               </div>
-             ) : (
-               <>
-                 <div className={`${isKidMode ? 'text-[8rem]' : 'text-7xl'} mb-4`}>{currentItem.icon}</div>
-                 <h4 className="font-black text-xl">{currentItem.name}</h4>
-                 {/* Fix: TypeScript error where 'info' property was not recognized on the union of kid/pro items.
-                     We cast to any when we know we are in pro mode. */}
-                 {!isKidMode && <p className="text-xs text-stone-400 mt-2 max-w-xs text-center">{(currentItem as any).info}</p>}
-               </>
-             )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {isKidMode ? (
-              <>
-                <button onClick={() => handleSort('recycle')} className="bg-blue-400 text-white p-6 rounded-3xl font-black transition-all hover:scale-105">RECYCLE ♻️</button>
-                <button onClick={() => handleSort('compost')} className="bg-emerald-500 text-white p-6 rounded-3xl font-black transition-all hover:scale-105">COMPOST 🍏</button>
-                <button onClick={() => handleSort('trash')} className="bg-stone-500 text-white p-6 rounded-3xl font-black transition-all hover:scale-105 col-span-2">TRASH 🗑️</button>
-              </>
-            ) : (
-              <>
-                <button onClick={() => handleSort('hazardous')} className="bg-red-600 text-white p-5 rounded-2xl font-bold text-sm transition-all hover:bg-red-700">HAZARDOUS</button>
-                <button onClick={() => handleSort('e-waste')} className="bg-amber-600 text-white p-5 rounded-2xl font-bold text-sm transition-all hover:bg-amber-700">E-WASTE</button>
-                <button onClick={() => handleSort('specialized')} className="bg-sky-600 text-white p-5 rounded-2xl font-bold text-sm transition-all hover:bg-sky-700">SPECIAL PLASTIC</button>
-                <button onClick={() => handleSort('compost')} className="bg-emerald-600 text-white p-5 rounded-2xl font-bold text-sm transition-all hover:bg-emerald-700">ORGANICS</button>
-                <button onClick={() => handleSort('landfill')} className="bg-stone-800 text-white p-5 rounded-2xl font-bold text-sm transition-all hover:bg-black col-span-2">LANDFILL / NON-RECYCLABLE</button>
-              </>
-            )}
-          </div>
+      <div className="max-w-xl mx-auto p-8 bg-white rounded-[3rem] shadow-xl border-4 border-sky-100 text-center space-y-8">
+        <button onClick={() => setActiveGame('hub')} className="float-left text-sky-400">← Hub</button>
+        <h2 className="text-3xl font-black text-sky-900">Sort-o-Matic</h2>
+        <div className="text-8xl py-12 bg-sky-50 rounded-[2.5rem] relative">
+          {gameFeedback ? <span className="text-2xl font-black text-sky-600">{gameFeedback}</span> : item.icon}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <button onClick={() => handleSort('recycle')} className="bg-blue-500 text-white p-4 rounded-2xl font-black">Recycle</button>
+          <button onClick={() => handleSort('compost')} className="bg-emerald-500 text-white p-4 rounded-2xl font-black">Compost</button>
+          <button onClick={() => handleSort('trash')} className="bg-stone-500 text-white p-4 rounded-2xl font-black">Trash</button>
         </div>
       </div>
     );
   }
 
-  // --- KID MODE: GROWER ---
-  if (activeGame === 'grow' && isKidMode) {
+  if (activeGame === 'grow') {
     return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in zoom-in-95 duration-500 text-center">
-        <div className="bg-white p-12 rounded-[3rem] shadow-xl border-4 border-sky-100 relative overflow-hidden">
-          <button onClick={() => setActiveGame('hub')} className="absolute top-6 left-6 text-2xl">🔙</button>
-          <h2 className="text-3xl font-black text-sky-900 mb-8">The Magic Forest Grower</h2>
-          
-          <div className="relative h-64 w-full flex items-center justify-center mb-12">
-            <div className="absolute bottom-0 w-full h-8 bg-stone-300 rounded-full blur-sm"></div>
-            <div 
-              className="transition-all duration-500 ease-out"
-              style={{ fontSize: `${2 + (growth / 10)}rem` }}
-            >
-              {growth === 0 ? '🌱' : growth < 40 ? '🌿' : growth < 70 ? '🎋' : '🌳'}
-            </div>
-            {gameFeedback && (
-              <div className="absolute -top-10 bg-yellow-400 text-white p-4 rounded-2xl font-black shadow-xl animate-bounce">
-                {gameFeedback}
-              </div>
-            )}
-          </div>
+      <div className="max-w-xl mx-auto p-12 bg-white rounded-[3rem] shadow-xl border-4 border-emerald-100 text-center space-y-8">
+        <button onClick={() => setActiveGame('hub')} className="float-left text-emerald-400">← Hub</button>
+        <h2 className="text-3xl font-black text-emerald-900">Forest Grower</h2>
+        <div className="text-9xl transition-all duration-500" style={{ transform: `scale(${1 + growth/100})` }}>
+          {growth < 30 ? '🌱' : growth < 70 ? '🌿' : '🌳'}
+        </div>
+        <button 
+          onClick={() => { setGrowth(g => Math.min(100, g + 10)); if (growth + 10 >= 100) onEarnCoins(50); }}
+          className="w-full py-6 bg-emerald-500 text-white rounded-[2rem] font-black text-2xl"
+        >
+          💧 Water Tree
+        </button>
+        {growth >= 100 && <p className="font-black text-emerald-600">Mighty Forest Grew! +50 Coins!</p>}
+      </div>
+    );
+  }
 
-          <div className="w-full bg-sky-50 h-6 rounded-full overflow-hidden border-2 border-sky-100 mb-12">
-            <div className="h-full bg-sky-500 transition-all duration-300" style={{ width: `${growth}%` }}></div>
-          </div>
-
-          {growth >= 100 ? (
-            <button onClick={() => setGrowth(0)} className="w-full py-6 bg-yellow-400 text-white rounded-[2rem] font-black text-2xl shadow-xl shadow-yellow-100">
-              PLANT ANOTHER! 🚀
-            </button>
-          ) : (
+  if (activeGame === 'tap') {
+    return (
+      <div className="h-full min-h-[500px] flex flex-col bg-white rounded-[3rem] border-4 border-yellow-100 p-8 overflow-hidden relative">
+        <div className="flex justify-between font-black text-xl mb-4">
+          <button onClick={() => setActiveGame('hub')}>← Quit</button>
+          <div>Time: {gameTime}s</div>
+          <div className="text-emerald-600">Score: {score}</div>
+        </div>
+        <div className="flex-1 bg-stone-50 rounded-[2rem] relative shadow-inner overflow-hidden cursor-crosshair">
+          {tapItems.map(item => (
             <button 
+              key={item.id} 
               onClick={() => {
-                const next = growth + 5;
-                setGrowth(next);
-                if (next >= 100) { onEarnCoins(100); setGameFeedback("YOU GREW A MIGHTY TREE! 🌳 +100 Stars!"); }
+                setScore(s => item.type === 'good' ? s + 10 : Math.max(0, s - 20));
+                setTapItems(prev => prev.filter(i => i.id !== item.id));
               }}
-              className="w-full py-8 bg-sky-500 hover:bg-sky-600 text-white rounded-[2rem] font-black text-2xl shadow-xl shadow-sky-100 transition-all active:scale-95"
+              className="absolute text-5xl transition-transform active:scale-150"
+              style={{ left: `${item.x}%`, top: `${item.y}%` }}
             >
-              💧 WATER THE TREE!
+              {item.icon}
             </button>
+          ))}
+          {gameTime === 0 && (
+            <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-8 text-center">
+              <h3 className="text-4xl font-black mb-4">Blitz Over!</h3>
+              <p className="text-2xl mb-8">You earned {score * 2} Coins!</p>
+              <button onClick={startTapGame} className="bg-sky-500 text-white px-8 py-4 rounded-2xl font-black">Play Again</button>
+            </div>
           )}
         </div>
       </div>

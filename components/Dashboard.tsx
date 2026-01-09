@@ -4,10 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ImpactData, EcoLevel } from '../types';
 
 const data: ImpactData[] = [
-  { name: 'Water', savings: 0, target: 1000 },
-  { name: 'Air', savings: 0, target: 50 },
-  { name: 'Trash', savings: 0, target: 2000 },
-  { name: 'Sun', savings: 0, target: 100 },
+  { name: 'Water', savings: 450, target: 1000 },
+  { name: 'Air', savings: 12, target: 50 },
+  { name: 'Trash', savings: 800, target: 2000 },
+  { name: 'Sun', savings: 35, target: 100 },
 ];
 
 interface DashboardProps {
@@ -20,6 +20,10 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel, onLevelUp, isKidMode }) => {
   if (isKidMode) {
+    // Generate garden based on current rank
+    const gardenIcons = ['🌱', '🌸', '🌻', '🌳', '🦋', '🍄', '🌈', '🏰'];
+    const activeGarden = gardenIcons.slice(0, currentLevel.rank - 1);
+
     return (
       <div className="space-y-8 animate-in zoom-in-95 duration-500">
         <div className="flex flex-col md:flex-row gap-8 items-center bg-white p-8 md:p-12 rounded-[3rem] shadow-xl shadow-sky-100 border-4 border-sky-100 overflow-hidden relative">
@@ -35,7 +39,9 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
           <div className="flex-1 text-center md:text-left relative z-10">
             <h2 className="text-4xl md:text-5xl font-black text-sky-900 mb-4">Hi Planet Hero!</h2>
             <p className="text-sky-700 text-xl font-medium leading-relaxed max-w-lg">
-              I'm Leafy! You're doing a super-duper job helping our Earth. Every piece of paper you recycle makes me so happy! beep-boop! 
+              {currentLevel.rank === 1 
+                ? "I'm Leafy! I'm so excited to start our green adventure together! Let's help the Earth! beep-boop!"
+                : "I'm Leafy! You're doing a super-duper job helping our Earth. Every piece of paper you recycle makes me so happy! beep-boop!"}
             </p>
           </div>
         </div>
@@ -76,18 +82,25 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
                 <p className="text-center text-sm font-bold opacity-70">Stars make the world go round!</p>
               </div>
             ) : (
-              <div className="text-center font-black py-4">YOU ARE AN EARTH WIZARD! 🧙‍♂️✨</div>
+              <div className="text-center font-black py-4 uppercase">You are a Legendary Earth Wizard! 🧙‍♂️✨</div>
             )}
           </div>
 
-          <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-sky-50 flex flex-col justify-center items-center text-center">
+          <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-sky-50 flex flex-col justify-center items-center text-center min-h-[300px]">
              <h3 className="text-2xl font-black text-sky-900 mb-2">My Earth Garden</h3>
-             <p className="text-sky-600 font-bold mb-6">The more you help, the more flowers grow!</p>
-             <div className="text-7xl flex gap-2 animate-pulse">
-               🌻 🌳 🌸 🦋 🍄
+             <p className="text-sky-600 font-bold mb-6">
+               {currentLevel.rank === 1 ? "Start helping to see your garden grow!" : "The more you help, the more friends appear!"}
+             </p>
+             <div className="text-7xl flex flex-wrap justify-center gap-4 animate-pulse">
+               {activeGarden.length > 0 ? activeGarden.map((icon, i) => (
+                 <span key={i} className="hover:scale-125 transition-transform cursor-default">{icon}</span>
+               )) : <span className="text-stone-200">🕳️</span>}
              </div>
              <div className="mt-8 w-full bg-sky-50 h-6 rounded-full overflow-hidden border-2 border-sky-100">
-                <div className="h-full bg-sky-400 w-0 transition-all duration-1000" style={{width: `${Math.min(100, (ecoCoins / 1000) * 100)}%`}}></div>
+                <div 
+                  className="h-full bg-sky-400 transition-all duration-1000" 
+                  style={{width: `${nextLevel ? Math.min(100, (ecoCoins / nextLevel.cost) * 100) : 100}%`}}
+                ></div>
              </div>
           </div>
         </div>
