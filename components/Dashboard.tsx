@@ -19,49 +19,57 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel, onLevelUp, isKidMode }) => {
+  const isPrestige = currentLevel.rank > 50;
+
   if (isKidMode) {
-    // Generate garden based on current rank
-    const gardenIcons = ['🌱', '🌸', '🌻', '🌳', '🦋', '🍄', '🌈', '🏰'];
-    const activeGarden = gardenIcons.slice(0, currentLevel.rank - 1);
+    // Generate garden based on milestone ranks
+    const gardenIcons = ['🌱', '🌸', '🌻', '🌳', '🦋', '🍄', '🌈', '🏰', '🐉', '✨'];
+    const activeGardenCount = Math.floor(currentLevel.rank / 10) + 1;
+    const activeGarden = gardenIcons.slice(0, activeGardenCount);
 
     return (
-      <div className="space-y-8 animate-in zoom-in-95 duration-500">
-        <div className="flex flex-col md:flex-row gap-8 items-center bg-white p-8 md:p-12 rounded-[3rem] shadow-xl shadow-sky-100 border-4 border-sky-100 overflow-hidden relative">
+      <div className={`space-y-8 animate-in zoom-in-95 duration-500 ${isPrestige ? 'prestige-glow' : ''}`}>
+        <div className={`flex flex-col md:flex-row gap-8 items-center bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border-4 overflow-hidden relative ${isPrestige ? 'border-yellow-400' : 'border-sky-100'}`}>
           <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <span className="text-[15rem]">🌈</span>
+            <span className="text-[15rem]">{isPrestige ? '✨' : '🌈'}</span>
           </div>
           
-          <div className="w-48 h-48 bg-sky-100 rounded-full flex items-center justify-center text-8xl shadow-inner relative z-10 animate-bounce-slow">
-            🤖
-            <div className="absolute -top-2 -right-2 bg-yellow-400 text-white text-xs font-black p-2 rounded-full shadow-lg">LEAFY!</div>
+          <div className={`w-48 h-48 rounded-full flex items-center justify-center text-8xl shadow-inner relative z-10 animate-bounce-slow ${isPrestige ? 'bg-yellow-50' : 'bg-sky-100'}`}>
+            {isPrestige ? '👑' : '🤖'}
+            <div className={`absolute -top-2 -right-2 text-white text-xs font-black p-2 rounded-full shadow-lg ${isPrestige ? 'bg-yellow-500' : 'bg-yellow-400'}`}>
+              {isPrestige ? 'MASTER!' : 'LEAFY!'}
+            </div>
           </div>
           
           <div className="flex-1 text-center md:text-left relative z-10">
-            <h2 className="text-4xl md:text-5xl font-black text-sky-900 mb-4">Hi Planet Hero!</h2>
+            <h2 className={`text-4xl md:text-5xl font-black mb-4 ${isKidMode ? 'text-sky-900' : 'text-stone-800'}`}>
+              {isPrestige ? 'Amazing Master!' : 'Hi Planet Hero!'}
+            </h2>
             <p className="text-sky-700 text-xl font-medium leading-relaxed max-w-lg">
-              {currentLevel.rank === 1 
-                ? "I'm Leafy! I'm so excited to start our green adventure together! Let's help the Earth! beep-boop!"
-                : "I'm Leafy! You're doing a super-duper job helping our Earth. Every piece of paper you recycle makes me so happy! beep-boop!"}
+              Rank {currentLevel.rank}! You are a {currentLevel.name}! 
+              {isPrestige 
+                ? " The Earth is singing because of your hard work! You are legendary!"
+                : " Every piece of paper you recycle makes me so happy! beep-boop!"}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-yellow-400 p-8 rounded-[3rem] shadow-xl text-yellow-900 border-b-8 border-yellow-500">
+          <div className={`p-8 rounded-[3rem] shadow-xl text-white border-b-8 ${isPrestige ? 'bg-gradient-to-br from-yellow-400 to-amber-600 border-amber-700' : 'bg-yellow-400 text-yellow-900 border-yellow-500'}`}>
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="text-2xl font-black">Level Up Zone!</h3>
-                <p className="font-bold opacity-80">Make your Earth Rank bigger!</p>
+                <h3 className="text-2xl font-black">Milestone Progress</h3>
+                <p className="font-bold opacity-80">Next Goal: Rank {Math.ceil((currentLevel.rank + 1) / 10) * 10}</p>
               </div>
-              <span className="text-5xl">✨</span>
+              <span className="text-5xl">{isPrestige ? '🏆' : '✨'}</span>
             </div>
             
-            <div className="flex items-center gap-6 bg-white/40 p-4 rounded-[2rem] mb-8">
+            <div className="flex items-center gap-6 bg-white/20 p-4 rounded-[2rem] mb-8">
               <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-4xl shadow-sm">
                 {currentLevel.icon}
               </div>
               <div>
-                <p className="text-xs font-black uppercase opacity-60">You are a</p>
+                <p className="text-xs font-black uppercase opacity-60">Currently</p>
                 <p className="text-2xl font-black">{currentLevel.name}</p>
               </div>
             </div>
@@ -77,28 +85,28 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
                       : 'bg-white/20 text-yellow-800 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  {ecoCoins >= nextLevel.cost ? `Upgrade to ${nextLevel.name}! 🚀` : `Need ${nextLevel.cost - ecoCoins} more Stars! 🌟`}
+                  {ecoCoins >= nextLevel.cost ? `Upgrade to Rank ${nextLevel.rank}! 🚀` : `Need ${nextLevel.cost - ecoCoins} more Stars! 🌟`}
                 </button>
-                <p className="text-center text-sm font-bold opacity-70">Stars make the world go round!</p>
+                <p className="text-center text-sm font-bold opacity-70">Progress: {currentLevel.rank}/100</p>
               </div>
             ) : (
-              <div className="text-center font-black py-4 uppercase">You are a Legendary Earth Wizard! 🧙‍♂️✨</div>
+              <div className="text-center font-black py-4 uppercase">You are an Earth Legend! 🌍👑✨</div>
             )}
           </div>
 
           <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-sky-50 flex flex-col justify-center items-center text-center min-h-[300px]">
              <h3 className="text-2xl font-black text-sky-900 mb-2">My Earth Garden</h3>
              <p className="text-sky-600 font-bold mb-6">
-               {currentLevel.rank === 1 ? "Start helping to see your garden grow!" : "The more you help, the more friends appear!"}
+               Milestones reached: {Math.floor(currentLevel.rank / 10)} / 10
              </p>
-             <div className="text-7xl flex flex-wrap justify-center gap-4 animate-pulse">
-               {activeGarden.length > 0 ? activeGarden.map((icon, i) => (
-                 <span key={i} className="hover:scale-125 transition-transform cursor-default">{icon}</span>
-               )) : <span className="text-stone-200">🕳️</span>}
+             <div className="text-7xl flex flex-wrap justify-center gap-4">
+               {activeGarden.map((icon, i) => (
+                 <span key={i} className="hover:scale-125 transition-transform cursor-default animate-in zoom-in">{icon}</span>
+               ))}
              </div>
              <div className="mt-8 w-full bg-sky-50 h-6 rounded-full overflow-hidden border-2 border-sky-100">
                 <div 
-                  className="h-full bg-sky-400 transition-all duration-1000" 
+                  className={`h-full transition-all duration-1000 ${isPrestige ? 'bg-yellow-400' : 'bg-sky-400'}`} 
                   style={{width: `${nextLevel ? Math.min(100, (ecoCoins / nextLevel.cost) * 100) : 100}%`}}
                 ></div>
              </div>
@@ -109,11 +117,11 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className={`space-y-8 animate-in fade-in duration-500 ${isPrestige ? 'prestige-mode' : ''}`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-stone-800">Your Green Impact</h2>
-          <p className="text-stone-500">Tracking your sustainability journey this month.</p>
+          <h2 className="text-3xl font-bold text-stone-800">Rank {currentLevel.rank} Progression</h2>
+          <p className="text-stone-500">Tier: {Math.floor((currentLevel.rank - 1) / 10) + 1} of 10 milestones.</p>
         </div>
         <div className="flex gap-2">
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 text-center min-w-[120px]">
@@ -123,34 +131,34 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
             </p>
           </div>
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 text-center min-w-[120px]">
-            <p className="text-xs text-stone-400 font-bold uppercase">Rank</p>
+            <p className="text-xs text-stone-400 font-bold uppercase">Milestone</p>
             <p className="text-2xl font-bold text-emerald-600 flex items-center justify-center gap-2">
-              {currentLevel.icon} {currentLevel.rank}
+              {currentLevel.icon} {Math.floor(currentLevel.rank / 10) * 10}%
             </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-stone-200 flex flex-col justify-between">
+        <div className={`bg-white p-6 rounded-[2.5rem] shadow-sm border flex flex-col justify-between ${isPrestige ? 'border-yellow-200' : 'border-stone-200'}`}>
           <div>
             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-              <span className="p-1.5 bg-amber-100 text-amber-600 rounded-lg">⭐</span> Progression Station
+              <span className={`p-1.5 rounded-lg ${isPrestige ? 'bg-yellow-100 text-yellow-600' : 'bg-amber-100 text-amber-600'}`}>⭐</span> Rank Upgrade Station
             </h3>
-            <p className="text-stone-500 text-sm mb-6">Earn coins from missions and quizzes to upgrade your status.</p>
+            <p className="text-stone-500 text-sm mb-6">Complete 100 levels to unlock the "Earth Legend" final game.</p>
             
-            <div className="flex items-center gap-6 mb-8 p-4 bg-stone-50 rounded-3xl">
+            <div className={`flex items-center gap-6 mb-8 p-4 rounded-3xl ${isPrestige ? 'bg-yellow-50' : 'bg-stone-50'}`}>
               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-3xl border border-stone-100">
                 {currentLevel.icon}
               </div>
               <div className="flex-1">
-                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Current Rank</p>
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Rank {currentLevel.rank}</p>
                 <p className="text-xl font-black text-stone-800">{currentLevel.name}</p>
               </div>
               {nextLevel && (
                 <div className="text-right">
-                  <p className="text-xs font-bold text-emerald-500 uppercase">Next Rank</p>
-                  <p className="text-lg font-bold text-stone-400">{nextLevel.name}</p>
+                  <p className="text-xs font-bold text-emerald-500 uppercase">Cost</p>
+                  <p className="text-lg font-bold text-stone-400">🪙 {nextLevel.cost}</p>
                 </div>
               )}
             </div>
@@ -160,8 +168,8 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <div className="space-y-1">
-                  <p className="text-xs font-bold text-stone-500 uppercase">Upgrade Cost</p>
-                  <p className="text-2xl font-black text-amber-600">🪙 {nextLevel.cost}</p>
+                  <p className="text-xs font-bold text-stone-500 uppercase">Progression</p>
+                  <p className="text-2xl font-black text-amber-600">Level {currentLevel.rank} / 100</p>
                 </div>
                 <button 
                   onClick={() => onLevelUp()}
@@ -172,12 +180,12 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
                       : 'bg-stone-100 text-stone-400 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  Upgrade Status
+                  Upgrade Rank
                 </button>
               </div>
               <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-amber-500 transition-all duration-500" 
+                  className={`h-full transition-all duration-500 ${isPrestige ? 'bg-yellow-500' : 'bg-amber-500'}`} 
                   style={{ width: `${Math.min(100, (ecoCoins / nextLevel.cost) * 100)}%` }}
                 ></div>
               </div>
@@ -192,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
 
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <span className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">📈</span> Monthly Progress
+            <span className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">📈</span> Impact History
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -214,6 +222,18 @@ const Dashboard: React.FC<DashboardProps> = ({ ecoCoins, currentLevel, nextLevel
           </div>
         </div>
       </div>
+      <style>{`
+        .prestige-glow {
+          box-shadow: 0 0 40px rgba(234, 179, 8, 0.1);
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 12s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };

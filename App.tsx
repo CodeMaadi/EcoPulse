@@ -13,35 +13,33 @@ import OnboardingForm from './components/OnboardingForm';
 import AvatarCustomizer from './components/AvatarCustomizer';
 import { EcoLevel, UserProfile } from './types';
 
-const PRO_LEVELS: EcoLevel[] = [
-  { rank: 1, name: 'Seedling', cost: 0, icon: '🌱' },
-  { rank: 2, name: 'Sprout', cost: 150, icon: '🌿' },
-  { rank: 3, name: 'Sapling', cost: 350, icon: '🌳' },
-  { rank: 4, name: 'Young Oak', cost: 600, icon: '🪵' },
-  { rank: 5, name: 'Forest Runner', cost: 900, icon: '🏃' },
-  { rank: 6, name: 'Eco-Warrior', cost: 1300, icon: '🛡️' },
-  { rank: 7, name: 'Solar Sage', cost: 1800, icon: '☀️' },
-  { rank: 8, name: 'River Master', cost: 2400, icon: '🌊' },
-  { rank: 9, name: 'Wind Rider', cost: 3100, icon: '🌬️' },
-  { rank: 10, name: 'Green Titan', cost: 4000, icon: '🏔️' },
-  { rank: 11, name: 'Forest Guardian', cost: 5000, icon: '🏰' },
-  { rank: 12, name: 'Earth Champion', cost: 6500, icon: '🌍' },
-];
+// Helper to generate 100 levels
+const generateRanks = (isKid: boolean): EcoLevel[] => {
+  const levels: EcoLevel[] = [];
+  const proPrefixes = ["Seedling", "Sprout", "Sapling", "Oak", "Grove", "Forest", "Warrior", "Sage", "Master", "Titan", "Guardian", "Champion"];
+  const kidPrefixes = ["Nature Friend", "Petal Pal", "Sunbeam", "Star Helper", "Cloud Hopper", "Tree Hero", "Rainbow Rider", "Jungle Scout", "Ocean Explorer", "Planet Pal", "Moon Walker", "Earth Wizard"];
+  const icons = isKid ? ["🌱", "🌸", "☀️", "🦋", "🌈", "🦒", "🐬", "🌍", "🌙", "✨"] : ["🌿", "🌳", "🪵", "🛡️", "☀️", "🌊", "🌬️", "🏔️", "🏰", "🌍"];
 
-const KID_LEVELS: EcoLevel[] = [
-  { rank: 1, name: 'Nature Friend', cost: 0, icon: '🦋' },
-  { rank: 2, name: 'Petal Pal', cost: 100, icon: '🌸' },
-  { rank: 3, name: 'Sunbeam', cost: 250, icon: '🌤️' },
-  { rank: 4, name: 'Star Helper', cost: 450, icon: '⭐' },
-  { rank: 5, name: 'Cloud Hopper', cost: 700, icon: '☁️' },
-  { rank: 6, name: 'Tree Hero', cost: 1000, icon: '🌳' },
-  { rank: 7, name: 'Rainbow Rider', cost: 1400, icon: '🌈' },
-  { rank: 8, name: 'Jungle Scout', cost: 1900, icon: '🐆' },
-  { rank: 9, name: 'Ocean Explorer', cost: 2500, icon: '🐬' },
-  { rank: 10, name: 'Planet Pal', cost: 3200, icon: '🌎' },
-  { rank: 11, name: 'Moon Walker', cost: 4100, icon: '🌙' },
-  { rank: 12, name: 'Earth Wizard', cost: 5200, icon: '🧙‍♂️' },
-];
+  for (let i = 1; i <= 100; i++) {
+    const tierIndex = Math.floor((i - 1) / 10);
+    const subTier = (i - 1) % 10 + 1;
+    const prefix = isKid ? kidPrefixes[tierIndex % kidPrefixes.length] : proPrefixes[tierIndex % proPrefixes.length];
+    
+    // Cost formula: exponential scaling
+    const cost = i === 1 ? 0 : Math.floor(100 * Math.pow(1.06, i - 1) + (i * 25));
+    
+    levels.push({
+      rank: i,
+      name: subTier === 10 ? `Supreme ${prefix}` : `${prefix} ${subTier}`,
+      cost: cost,
+      icon: icons[tierIndex % icons.length]
+    });
+  }
+  return levels;
+};
+
+const PRO_LEVELS = generateRanks(false);
+const KID_LEVELS = generateRanks(true);
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
